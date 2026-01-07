@@ -19,13 +19,16 @@ async def rerank_with_zeroentropy(
     Returns:
         Reranked list of items with scores
     """
+    # Initialize the client (ensure API key is set in environment or passed here)
     client = ZeroEntropy(api_key=settings.zeroentropy_api_key)
     
-    # Prepare documents for reranking
+    # Prepare documents for reranking (List of strings)
     documents = [f"{item['title']}: {item['text']}" for item in items]
     
     # Call ZeroEntropy rerank API
-    response = client.rerank(
+    # Update 1: Access via the 'models' namespace
+    # Update 2: Use the 'zerank-2' model (latest SOTA model)
+    response = client.models.rerank(
         model="zerank-2",
         query=user_context,
         documents=documents,
@@ -35,6 +38,7 @@ async def rerank_with_zeroentropy(
     # Map results back to items
     ranked_items = []
     for result in response.results:
+        # The 'index' attribute maps back to the original list position
         item = items[result.index].copy()
         item["score"] = result.relevance_score
         ranked_items.append(item)
