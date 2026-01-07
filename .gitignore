@@ -1,0 +1,39 @@
+# Dependencies
+node_modules/
+__pycache__/
+*.pyc
+.venv/
+venv/
+
+# Environment files
+.env
+.env.local
+.env.*.local
+backend/.env
+
+# User inputs (gitignored but structure kept)
+user_inputs/catalogue.jsonl
+user_inputs/config.yaml
+user_inputs/embeddings.npy
+user_inputs/catalogue.json
+
+# Build outputs
+frontend/dist/
+*.egg-info/
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Firebase
+.firebase/
+*.log
+
+# Python
+*.egg
+dist/
+build/
