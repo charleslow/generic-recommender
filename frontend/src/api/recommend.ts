@@ -18,7 +18,7 @@ export interface LatencyBreakdown {
 export interface DebugInfo {
   synthetic_candidates: string[];
   num_retrieved: number;
-  rerank_method_used: string;
+  rerank_model_used: string;
   llm_model_used: string;
 }
 
@@ -30,7 +30,7 @@ export interface RecommendResponse {
 
 export interface ModelsResponse {
   llm_models: string[];
-  rerank_methods: string[];
+  rerank_models: string[];
 }
 
 // Configure this to your Cloud Run URL
@@ -47,7 +47,7 @@ export async function getModels(): Promise<ModelsResponse> {
 export async function getRecommendations(
   userContext: string,
   llmModel: string,
-  rerankMethod: string
+  rerankModel: string
 ): Promise<RecommendResponse> {
   const response = await fetch(`${API_BASE_URL}/recommend`, {
     method: 'POST',
@@ -57,7 +57,7 @@ export async function getRecommendations(
     body: JSON.stringify({
       user_context: userContext,
       llm_model: llmModel,
-      rerank_method: rerankMethod,
+      rerank_model: rerankModel,
     }),
   });
   

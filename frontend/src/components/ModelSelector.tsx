@@ -1,19 +1,19 @@
 interface Props {
   llmModels: string[];
-  rerankMethods: string[];
+  rerankModels: string[];
   selectedLlmModel: string;
-  selectedRerankMethod: string;
+  selectedRerankModel: string;
   onLlmModelChange: (model: string) => void;
-  onRerankMethodChange: (method: string) => void;
+  onRerankModelChange: (model: string) => void;
 }
 
 export default function ModelSelector({
   llmModels,
-  rerankMethods,
+  rerankModels,
   selectedLlmModel,
-  selectedRerankMethod,
+  selectedRerankModel,
   onLlmModelChange,
-  onRerankMethodChange,
+  onRerankModelChange,
 }: Props) {
   return (
     <div className="control-row">
@@ -32,15 +32,15 @@ export default function ModelSelector({
         </select>
       </div>
       <div className="control-group">
-        <label htmlFor="rerank-method">Reranking Method</label>
+        <label htmlFor="rerank-model">Reranking Model</label>
         <select
-          id="rerank-method"
-          value={selectedRerankMethod}
-          onChange={(e) => onRerankMethodChange(e.target.value)}
+          id="rerank-model"
+          value={selectedRerankModel}
+          onChange={(e) => onRerankModelChange(e.target.value)}
         >
-          {rerankMethods.map((method) => (
-            <option key={method} value={method}>
-              {method === 'zerank-2' ? 'ZeroEntropy (zerank-2)' : 'LLM Reranking'}
+          {rerankModels.map((model) => (
+            <option key={model} value={model}>
+              {model.startsWith('zerank') ? `ZeroEntropy (${model})` : model}
             </option>
           ))}
         </select>

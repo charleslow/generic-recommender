@@ -71,7 +71,7 @@ generic-recommender/
 {
   "user_context": "I want a job in AI and gaming...",
   "llm_model": "openai/gpt-4o-mini",
-  "rerank_method": "zerank-2"  // or "llm"
+  "rerank_model": "zerank-2"  // or an LLM model name like "openai/gpt-4o-mini"
 }
 ```
 

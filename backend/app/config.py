@@ -20,7 +20,7 @@ class Settings(BaseSettings):
     # Recommender config
     system_prompt: str = "You are a career guidance assistant to suggest future pathways for youth."
     item_type: str = "job"
-    num_synthetic: int = 10      # Number of synthetic candidates to generate
+    num_synthetic: int = 3       # Number of synthetic candidates to generate
     num_candidates: int = 50     # Number of items to retrieve for reranking
     num_results: int = 5         # Final recommendations to return
     
@@ -31,8 +31,8 @@ class Settings(BaseSettings):
         "meta-llama/llama-3.1-70b-instruct"
     ]
     
-    # Reranking options
-    rerank_methods: list[str] = ["zerank-2", "llm"]
+    # Reranking options (zerank-* uses ZeroEntropy, others are LLM model names)
+    rerank_models: list[str] = ["zerank-2", "openai/gpt-4o-mini", "anthropic/claude-3-haiku"]
     
     class Config:
         env_file = ".env"

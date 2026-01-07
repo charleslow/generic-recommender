@@ -9,11 +9,11 @@ import DebugPanel from './components/DebugPanel';
 function App() {
   // Available options
   const [llmModels, setLlmModels] = useState<string[]>(['openai/gpt-4o-mini']);
-  const [rerankMethods, setRerankMethods] = useState<string[]>(['zerank-2', 'llm']);
+  const [rerankModels, setRerankModels] = useState<string[]>(['zerank-2', 'openai/gpt-4o-mini']);
   
   // Selected options
   const [selectedLlmModel, setSelectedLlmModel] = useState('openai/gpt-4o-mini');
-  const [selectedRerankMethod, setSelectedRerankMethod] = useState('zerank-2');
+  const [selectedRerankModel, setSelectedRerankModel] = useState('zerank-2');
   
   // Query and results
   const [userContext, setUserContext] = useState('');
@@ -28,12 +28,12 @@ function App() {
     getModels()
       .then((data) => {
         setLlmModels(data.llm_models);
-        setRerankMethods(data.rerank_methods);
+        setRerankModels(data.rerank_models);
         if (data.llm_models.length > 0) {
           setSelectedLlmModel(data.llm_models[0]);
         }
-        if (data.rerank_methods.length > 0) {
-          setSelectedRerankMethod(data.rerank_methods[0]);
+        if (data.rerank_models.length > 0) {
+          setSelectedRerankModel(data.rerank_models[0]);
         }
       })
       .catch((err) => {
@@ -52,7 +52,7 @@ function App() {
       const response = await getRecommendations(
         userContext,
         selectedLlmModel,
-        selectedRerankMethod
+        selectedRerankModel
       );
       setResult(response);
     } catch (err) {
@@ -73,11 +73,11 @@ function App() {
       <section className="controls">
         <ModelSelector
           llmModels={llmModels}
-          rerankMethods={rerankMethods}
+          rerankModels={rerankModels}
           selectedLlmModel={selectedLlmModel}
-          selectedRerankMethod={selectedRerankMethod}
+          selectedRerankModel={selectedRerankModel}
           onLlmModelChange={setSelectedLlmModel}
-          onRerankMethodChange={setSelectedRerankMethod}
+          onRerankModelChange={setSelectedRerankModel}
         />
         <QueryInput
           value={userContext}

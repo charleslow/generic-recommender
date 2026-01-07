@@ -8,13 +8,15 @@ from app.services.llm import rerank_with_llm
 async def rerank_with_zeroentropy(
     user_context: str,
     items: list[dict],
+    model: str = "zerank-2",
 ) -> list[dict]:
     """
-    Rerank items using ZeroEntropy's zerank-2.
+    Rerank items using ZeroEntropy's zerank models.
     
     Args:
         user_context: The user's context/query
         items: List of item dicts with 'item_id', 'title', 'text'
+        model: ZeroEntropy model name (e.g., 'zerank-2')
     
     Returns:
         Reranked list of items with scores
@@ -26,10 +28,8 @@ async def rerank_with_zeroentropy(
     documents = [f"{item['title']}: {item['text']}" for item in items]
     
     # Call ZeroEntropy rerank API
-    # Update 1: Access via the 'models' namespace
-    # Update 2: Use the 'zerank-2' model (latest SOTA model)
     response = client.models.rerank(
-        model="zerank-2",
+        model=model,
         query=user_context,
         documents=documents,
         top_n=settings.num_results,
@@ -49,24 +49,20 @@ async def rerank_with_zeroentropy(
 async def rerank_items(
     user_context: str,
     items: list[dict],
-    method: str,
-    llm_model: str = "openai/gpt-4o-mini",
+    rerank_model: str,
 ) -> list[dict]:
     """
-    Rerank items using specified method.
+    Rerank items using specified model.
     
     Args:
         user_context: The user's context/query
         items: List of item dicts
-        method: 'zerank-2' or 'llm'
-        llm_model: LLM model to use if method is 'llm'
+        rerank_model: 'zerank-*' for ZeroEntropy, or an LLM model name
     
     Returns:
         Reranked list of items with scores
     """
-    if method == "zerank-2":
-        return await rerank_with_zeroentropy(user_context, items)
-    elif method == "llm":
-        return await rerank_with_llm(user_context, items, llm_model)
+    if rerank_model.startswith("zerank"):
+        return await rerank_with_zeroentropy(user_context, items, rerank_model)
     else:
-        raise ValueError(f"Unknown rerank method: {method}")
+        return await rerank_with_llm(user_context, items, rerank_model)

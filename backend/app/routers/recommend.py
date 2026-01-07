@@ -37,10 +37,10 @@ async def get_recommendations(request: RecommendRequest):
             status_code=400,
             detail=f"Invalid model. Available: {settings.available_models}"
         )
-    if request.rerank_method not in settings.rerank_methods:
+    if request.rerank_model not in settings.rerank_models:
         raise HTTPException(
             status_code=400,
-            detail=f"Invalid rerank method. Available: {settings.rerank_methods}"
+            detail=f"Invalid rerank model. Available: {settings.rerank_models}"
         )
     
     # 1. Generate synthetic candidates
@@ -79,8 +79,7 @@ async def get_recommendations(request: RecommendRequest):
         ranked_items = await rerank_items(
             user_context=request.user_context,
             items=retrieved_items,
-            method=request.rerank_method,
-            llm_model=request.llm_model,
+            rerank_model=request.rerank_model,
         )
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Reranking failed: {str(e)}")
@@ -88,15 +87,14 @@ async def get_recommendations(request: RecommendRequest):
     
     total_ms = (time.perf_counter() - total_start) * 1000
     
-    # Build response
+    # Build response (limit to configured num_results)
     recommendations = [
         Recommendation(
             item_id=item["item_id"],
             title=item["title"],
-            text=item["text"],
             score=item["score"],
         )
-        for item in ranked_items
+        for item in ranked_items[:settings.num_results]
     ]
     
     latency = LatencyBreakdown(
@@ -110,7 +108,7 @@ async def get_recommendations(request: RecommendRequest):
     debug = DebugInfo(
         synthetic_candidates=synthetic_candidates,
         num_retrieved=len(retrieved_items),
-        rerank_method_used=request.rerank_method,
+        rerank_model_used=request.rerank_model,
         llm_model_used=request.llm_model,
     )
     
@@ -123,10 +121,10 @@ async def get_recommendations(request: RecommendRequest):
 
 @router.get("/models", response_model=ModelsResponse)
 async def get_available_models():
-    """Get available LLM models and reranking methods."""
+    """Get available LLM models and reranking models."""
     return ModelsResponse(
         llm_models=settings.available_models,
-        rerank_methods=settings.rerank_methods,
+        rerank_models=settings.rerank_models,
     )
 
 

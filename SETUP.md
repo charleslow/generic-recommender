@@ -110,15 +110,34 @@ EOF
 
 ### Test locally first
 
+The default `DATA_DIR` is set to `/app/data` for running in Docker. For local development, you need to override this to point to your local data folder:
+
 ```bash
 cd backend
 uv pip install -r requirements.txt
 
-uvicorn app.main:app --reload --port 8080
+# Run with DATA_DIR pointing to local data folder
+DATA_DIR=$(pwd)/data uvicorn app.main:app --reload --port 8080
 
 # Test the API
 curl http://localhost:8080/health
 curl http://localhost:8080/models
+
+# ZeroEntropy reranking
+curl -X POST http://localhost:8080/recommend \
+  -H "Content-Type: application/json" \
+  -d '{"user_context": "I am interested in finance", "llm_model": "openai/gpt-4o-mini", "rerank_model": "zerank-2"}'
+
+# LLM reranking
+curl -X POST http://localhost:8080/recommend \
+  -H "Content-Type: application/json" \
+  -d '{"user_context": "I am interested in finance", "llm_model": "openai/gpt-4o-mini", "rerank_model": "anthropic/claude-3-haiku"}'
+```
+
+Alternatively, add `DATA_DIR` to your `.env` file:
+```bash
+echo "DATA_DIR=$(pwd)/data" >> .env
+uvicorn app.main:app --reload --port 8080
 ```
 
 ### Deploy to Cloud Run

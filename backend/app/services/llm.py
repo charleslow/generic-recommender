@@ -1,5 +1,6 @@
 """LLM services using OpenRouter API via OpenAI SDK."""
 import json
+import re
 
 from openai import AsyncOpenAI
 
@@ -12,13 +13,40 @@ client = AsyncOpenAI(
 )
 
 
-def _parse_json_response(content: str) -> list:
-    """Parse JSON from LLM response, handling markdown code blocks."""
+def _parse_json_array(content: str | None) -> list:
+    """
+    Robustly parse a JSON array from LLM response.
+    
+    Handles:
+    - Markdown code blocks (```json ... ``` or ``` ... ```)
+    - Leading/trailing whitespace and text
+    - Arrays embedded in explanatory text
+    """
+    if not content:
+        raise ValueError("LLM returned empty response")
+    
     content = content.strip()
-    if content.startswith("```"):
-        content = content.split("\n", 1)[1]  # Remove first line
-        content = content.rsplit("```", 1)[0]  # Remove last ```
-    return json.loads(content)
+    
+    # Remove markdown code blocks if present
+    if "```" in content:
+        # Extract content between code blocks
+        match = re.search(r"```(?:json)?\s*\n?(.*?)\n?```", content, re.DOTALL)
+        if match:
+            content = match.group(1).strip()
+    
+    # Try to find a JSON array in the content
+    # Look for content between [ and ]
+    match = re.search(r"\[.*\]", content, re.DOTALL)
+    if match:
+        content = match.group(0)
+    
+    try:
+        result = json.loads(content)
+        if isinstance(result, list):
+            return result
+        raise ValueError(f"Expected JSON array, got {type(result).__name__}")
+    except json.JSONDecodeError as e:
+        raise ValueError(f"Failed to parse JSON array: {e}. Content: {content[:200]}")
 
 
 async def generate_synthetic_candidates(
@@ -52,7 +80,7 @@ Response format: ["candidate1", "candidate2", ...]"""
     )
     
     content = response.choices[0].message.content
-    candidates = _parse_json_response(content)
+    candidates = _parse_json_array(content)
     return candidates[:settings.num_synthetic]
 
 
@@ -92,23 +120,34 @@ async def rerank_with_llm(
     Returns:
         Reranked list of items with scores
     """
+    # Build numbered list of items with their IDs clearly marked
     items_text = "\n".join([
-        f"{i+1}. [{item['item_id']}] {item['title']}: {item['text'][:200]}"
-        for i, item in enumerate(items)
+        f"- ID: {item['item_id']} | Title: {item['title']} | Description: {item['text'][:150]}"
+        for item in items
     ])
     
-    prompt = f"""{settings.system_prompt}
+    # Get list of valid IDs for the prompt
+    valid_ids = [item['item_id'] for item in items]
+    
+    prompt = f"""You are a recommendation system. Your task is to rank items by relevance to the user.
 
-# User Context
+USER CONTEXT:
 {user_context}
 
-# Available Items
+AVAILABLE ITEMS:
 {items_text}
 
-Select the top {settings.num_results} most relevant items for this user.
-Return ONLY a JSON array of the item IDs in order of relevance (most relevant first).
+TASK:
+Select the {settings.num_results} most relevant items for this user and return their IDs.
 
-Response format: ["item_id_1", "item_id_2", ...]"""
+RESPONSE FORMAT:
+You must respond with ONLY a JSON array of item IDs, nothing else.
+The array should contain exactly {settings.num_results} item IDs in order of relevance (most relevant first).
+Use the exact item IDs from the list above.
+
+Valid IDs are: {valid_ids}
+
+YOUR RESPONSE (JSON array only):"""
 
     response = await client.chat.completions.create(
         model=model,
@@ -117,7 +156,7 @@ Response format: ["item_id_1", "item_id_2", ...]"""
     )
     
     content = response.choices[0].message.content
-    ranked_ids = _parse_json_response(content)
+    ranked_ids = _parse_json_array(content)
     
     # Build result with scores (descending from 1.0)
     id_to_item = {item["item_id"]: item for item in items}

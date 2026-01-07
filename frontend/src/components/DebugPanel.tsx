@@ -24,8 +24,8 @@ export default function DebugPanel({ debug }: Props) {
             <p>{debug.llm_model_used}</p>
           </div>
           <div style={{ marginTop: '1rem' }}>
-            <h4>Reranking Method</h4>
-            <p>{debug.rerank_method_used}</p>
+            <h4>Reranking Model</h4>
+            <p>{debug.rerank_model_used}</p>
           </div>
           <div style={{ marginTop: '1rem' }}>
             <h4>Items Retrieved for Reranking</h4>
