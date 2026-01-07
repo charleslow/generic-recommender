@@ -64,11 +64,11 @@ Each line must be valid JSON with these fields:
 ### Embed the catalogue
 
 ```bash
-# Set up Python environment
+# Set up Python environment with uv
 cd generic-recommender
-python -m venv .venv
+uv venv
 source .venv/bin/activate
-pip install httpx numpy
+uv pip install openai numpy
 
 # Set your OpenRouter API key
 export OPENROUTER_API_KEY=sk-or-v1-xxxx
@@ -112,7 +112,7 @@ EOF
 
 ```bash
 cd backend
-pip install -r requirements.txt
+uv pip install -r requirements.txt
 
 uvicorn app.main:app --reload --port 8080
 

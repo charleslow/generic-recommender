@@ -17,8 +17,8 @@ import os
 import time
 from pathlib import Path
 
-import httpx
 import numpy as np
+from openai import OpenAI
 
 # Configuration
 OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY")
@@ -27,6 +27,12 @@ BATCH_SIZE = 100  # OpenRouter batch limit
 INPUT_FILE = Path("user_inputs/catalogue.jsonl")
 OUTPUT_EMBEDDINGS = Path("user_inputs/embeddings.npy")
 OUTPUT_CATALOGUE = Path("user_inputs/catalogue.json")
+
+# OpenRouter client (OpenAI-compatible)
+client = OpenAI(
+    base_url="https://openrouter.ai/api/v1",
+    api_key=OPENROUTER_API_KEY,
+)
 
 
 def load_catalogue(filepath: Path) -> list[dict]:
@@ -51,23 +57,13 @@ def load_catalogue(filepath: Path) -> list[dict]:
 
 def embed_batch(texts: list[str]) -> list[list[float]]:
     """Embed a batch of texts using OpenRouter."""
-    response = httpx.post(
-        "https://openrouter.ai/api/v1/embeddings",
-        headers={
-            "Authorization": f"Bearer {OPENROUTER_API_KEY}",
-            "Content-Type": "application/json",
-        },
-        json={
-            "model": EMBEDDING_MODEL,
-            "input": texts,
-        },
-        timeout=60.0,
+    response = client.embeddings.create(
+        model=EMBEDDING_MODEL,
+        input=texts,
     )
-    response.raise_for_status()
     
-    result = response.json()
-    embeddings_data = sorted(result["data"], key=lambda x: x["index"])
-    return [item["embedding"] for item in embeddings_data]
+    embeddings_data = sorted(response.data, key=lambda x: x.index)
+    return [item.embedding for item in embeddings_data]
 
 
 def main():
@@ -110,7 +106,7 @@ def main():
         json.dump(catalogue, f, indent=2)
     print(f"Saved catalogue metadata to {OUTPUT_CATALOGUE}")
     
-    print("\nDone! Now run upload_to_gcs.py to upload to Cloud Storage.")
+    print("\nDone! Now copy files to backend/data/ before deploying.")
 
 
 if __name__ == "__main__":
