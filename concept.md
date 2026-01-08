@@ -15,7 +15,6 @@ Create a folder called `user_inputs/`, which is git-kept but empty. Can provide 
 **Configuration**. In a `.yaml` file, the user supplies a configuration for the system. This includes:
 - `system_prompt`: the system prompt guiding behaviour of the system
     - e.g. `You are a career guidance assistant to suggest future pathways for youth`.
-- `item_type`: the type of item we are recommending, e.g. `job`
 - `num_candidates`: the number of synthetic candidates to retrieve and send for reranking
 - `num_results`: the final number of recommendations to return
 
@@ -39,7 +38,7 @@ First, we use an LLM to generate synthetic item candidates for the user. This is
 The meta prompt is:
 
 ```
-{system_prompt} Generate some {item_type} recommendations for {user_context}. Provide a list of strings.
+{system_prompt} Generate some recommendations for {user_context}. Provide a list of strings.
 ```
 
 Second, we use the candidates to look up the pre-computed vector database to retrieve nearest neighbours.

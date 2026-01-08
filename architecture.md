@@ -107,7 +107,6 @@ Returns available LLM models for frontend dropdown.
 
 ```yaml
 system_prompt: "You are a career guidance assistant to suggest future pathways for youth."
-item_type: "job"
 num_candidates: 50       # Retrieved from vector search
 num_results: 5           # Final recommendations
 num_synthetic: 10        # Synthetic candidates from LLM

@@ -2,7 +2,6 @@
 # Copy this file to config.yaml and customize
 
 system_prompt: "You are a career guidance assistant to suggest future pathways for youth."
-item_type: "job"
 num_synthetic: 10      # Number of synthetic candidates to generate from LLM
 num_candidates: 50     # Number of items to retrieve for reranking  
 num_results: 5         # Final number of recommendations to return

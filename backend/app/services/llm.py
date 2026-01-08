@@ -97,8 +97,8 @@ async def generate_synthetic_candidates(
     
     prompt = f"""{effective_prompt}
 
-Generate {settings.num_synthetic} {settings.item_type} recommendations for the following user context. 
-Return ONLY a JSON array of strings, each being a short {settings.item_type} title/name.
+Generate {settings.num_synthetic} recommendations for the following user context. 
+Return ONLY a JSON array of strings, each being a short title/name.
 
 User Context:
 {user_context}

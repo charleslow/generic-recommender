@@ -44,7 +44,6 @@ class Settings(BaseSettings):
     
     # Recommender config
     system_prompt: str = "You are a career coach. You recommend articles that best suit the career seeker."
-    item_type: str = "job"
     num_synthetic: int = 3       # Number of synthetic candidates to generate
     num_candidates: int = 50     # Number of items to retrieve for reranking
     num_results: int = 5         # Final recommendations to return
