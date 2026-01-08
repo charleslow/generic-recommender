@@ -179,6 +179,7 @@ export $(grep -v '^#' .env | xargs)
 # Create secrets from env vars
 echo -n "$OPENROUTER_API_KEY" | gcloud secrets create openrouter-api-key --data-file=-
 echo -n "$ZEROENTROPY_API_KEY" | gcloud secrets create zeroentropy-api-key --data-file=-
+echo -n "$GROQ_API_KEY" | gcloud secrets create groq-api-key --data-file=-
 
 # Get project number and grant Cloud Run access to secrets
 PROJECT_NUMBER=$(gcloud projects describe $(gcloud config get-value project) --format="value(projectNumber)")
@@ -191,7 +192,6 @@ gcloud secrets add-iam-policy-binding zeroentropy-api-key \
   --member="serviceAccount:${PROJECT_NUMBER}-compute@developer.gserviceaccount.com" \
   --role="roles/secretmanager.secretAccessor"
 
-echo -n "$GROQ_API_KEY" | gcloud secrets create groq-api-key --data-file=-
 gcloud secrets add-iam-policy-binding groq-api-key \
   --member="serviceAccount:${PROJECT_NUMBER}-compute@developer.gserviceaccount.com" \
   --role="roles/secretmanager.secretAccessor"
@@ -201,8 +201,8 @@ gcloud run deploy generic-recommender \
   --source . \
   --region asia-southeast1 \
   --allow-unauthenticated \
-  --max-instances 2 \
-  --memory 1Gi \
+  --max-instances 1 \
+  --memory 2Gi \
   --cpu 2 \
   --set-secrets "OPENROUTER_API_KEY=openrouter-api-key:latest,ZEROENTROPY_API_KEY=zeroentropy-api-key:latest,GROQ_API_KEY=groq-api-key:latest"
 ```
