@@ -69,3 +69,5 @@ node_modules/
 .dataconnect
 
 .env.local
+.env.development
+.env.production
