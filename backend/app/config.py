@@ -15,9 +15,6 @@ EMBEDDING_MODELS = {
 OPENROUTER_MODELS = [
     "openrouter/openai/gpt-4o-mini",
     "openrouter/bytedance-seed/seed-1.6-flash",
-    "openrouter/x-ai/grok-code-fast-1",
-    "openrouter/x-ai/grok-4.1-fast",
-    "openrouter/x-ai/grok-4-fast",
     "openrouter/deepseek/deepseek-chat",
     "openrouter/deepseek/deepseek-r1-0528-qwen3-8b",
     "openrouter/google/gemini-2.5-flash-lite",
