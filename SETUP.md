@@ -108,6 +108,12 @@ ZEROENTROPY_API_KEY=ze-xxxx
 EOF
 ```
 
+Export the environment variables to your shell:
+
+```bash
+export $(grep -v '^#' .env | xargs)
+```
+
 ### Test locally first
 
 The default `DATA_DIR` is set to `/app/data` for running in Docker. For local development, you need to override this to point to your local data folder:
@@ -148,15 +154,13 @@ cd backend
 # Deploy with environment variables
 gcloud run deploy generic-recommender \
   --source . \
-  --region us-central1 \
+  --region asia-southeast1 \
   --allow-unauthenticated \
   --min-instances 1 \
   --max-instances 3 \
   --memory 2Gi \
   --set-env-vars "OPENROUTER_API_KEY=sk-or-v1-xxxx,ZEROENTROPY_API_KEY=ze-xxxx"
 ```
-
-**Important**: Using `--min-instances 1` keeps one instance warm to avoid cold starts.
 
 **Note**: The embedding data is bundled into the Docker image. When you update your catalogue, re-run the embedding script and redeploy.
 
@@ -165,25 +169,30 @@ Note the deployed URL (e.g., `https://generic-recommender-xxxxx-uc.a.run.app`)
 ### Using Secret Manager (recommended for production)
 
 ```bash
-# Create secrets
-echo -n "sk-or-v1-xxxx" | gcloud secrets create openrouter-api-key --data-file=-
-echo -n "ze-xxxx" | gcloud secrets create zeroentropy-api-key --data-file=-
+# Export env vars if not already done
+export $(grep -v '^#' .env | xargs)
 
-# Grant Cloud Run access
+# Create secrets from env vars
+echo -n "$OPENROUTER_API_KEY" | gcloud secrets create openrouter-api-key --data-file=-
+echo -n "$ZEROENTROPY_API_KEY" | gcloud secrets create zeroentropy-api-key --data-file=-
+
+# Get project number and grant Cloud Run access to secrets
+PROJECT_NUMBER=$(gcloud projects describe $(gcloud config get-value project) --format="value(projectNumber)")
+
 gcloud secrets add-iam-policy-binding openrouter-api-key \
-  --member="serviceAccount:YOUR_PROJECT_NUMBER-compute@developer.gserviceaccount.com" \
+  --member="serviceAccount:${PROJECT_NUMBER}-compute@developer.gserviceaccount.com" \
   --role="roles/secretmanager.secretAccessor"
 
 gcloud secrets add-iam-policy-binding zeroentropy-api-key \
-  --member="serviceAccount:YOUR_PROJECT_NUMBER-compute@developer.gserviceaccount.com" \
+  --member="serviceAccount:${PROJECT_NUMBER}-compute@developer.gserviceaccount.com" \
   --role="roles/secretmanager.secretAccessor"
 
 # Deploy with secrets
 gcloud run deploy generic-recommender \
   --source . \
-  --region us-central1 \
+  --region asia-southeast1 \
   --allow-unauthenticated \
-  --min-instances 1 \
+  --max-instances 2 \
   --set-secrets "OPENROUTER_API_KEY=openrouter-api-key:latest,ZEROENTROPY_API_KEY=zeroentropy-api-key:latest"
 ```
 
@@ -215,11 +224,25 @@ firebase init hosting
 
 ### Configure API URL
 
-Create `.env.local` with your Cloud Run URL:
+Create `.env.local` in the frontend directory with your Cloud Run URL:
 
 ```bash
-echo "VITE_API_URL=https://generic-recommender-xxxxx-uc.a.run.app" > .env.local
+cd frontend
+echo "VITE_API_URL=$(gcloud run services describe generic-recommender --region asia-southeast1 --format='value(status.url)')" > .env.local
 ```
+
+### Test locally first
+
+```bash
+cd frontend
+npm install
+npm run dev
+```
+
+This starts the Vite dev server at `http://localhost:5173`. Test that:
+- The app loads correctly
+- Models are fetched from your Cloud Run backend
+- Recommendations work with both reranking methods
 
 ### Build and deploy
 

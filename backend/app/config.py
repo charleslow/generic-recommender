@@ -4,6 +4,22 @@ Values are hardcoded here but can be loaded from a YAML file.
 """
 from pydantic_settings import BaseSettings
 
+MODELS = [
+        # openai
+        "openai/gpt-4o-mini",
+        "openai/gpt-oss-120b",
+        "openai/gpt-oss-20b",
+        "openai/gpt-5-nano",
+        # deepseek
+        "deepseek/deepseek-chat",
+        "deepseek/deepseek-r1-0528-qwen3-8b",
+        "deepseek/deepseek-r1-distill-qwen-32b",
+        # gemini
+        "google/gemini-2.5-flash-lite",
+        # qwen
+        "qwen/qwen3-next-80b-a3b-instruct",
+        "qwen/qwen3-coder:free",
+    ]
 
 class Settings(BaseSettings):
     # API Keys
@@ -25,14 +41,12 @@ class Settings(BaseSettings):
     num_results: int = 5         # Final recommendations to return
     
     # Available LLM models for frontend dropdown
-    available_models: list[str] = [
-        "openai/gpt-4o-mini",
-        "anthropic/claude-3-haiku",
-        "meta-llama/llama-3.1-70b-instruct"
-    ]
+    available_models: list[str] = MODELS
     
     # Reranking options (zerank-* uses ZeroEntropy, others are LLM model names)
-    rerank_models: list[str] = ["zerank-2", "openai/gpt-4o-mini", "anthropic/claude-3-haiku"]
+    rerank_models: list[str] = [
+        "zerank-2", *MODELS
+    ]
     
     class Config:
         env_file = ".env"
