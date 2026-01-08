@@ -43,7 +43,7 @@ class Settings(BaseSettings):
     available_embedding_models: list[str] = list(EMBEDDING_MODELS.keys())
     
     # Recommender config
-    system_prompt: str = "You are a career guidance assistant to suggest future pathways for youth."
+    system_prompt: str = "You are a career coach. You recommend articles that best suit the career seeker."
     item_type: str = "job"
     num_synthetic: int = 3       # Number of synthetic candidates to generate
     num_candidates: int = 50     # Number of items to retrieve for reranking
