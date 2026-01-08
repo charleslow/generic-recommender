@@ -20,8 +20,12 @@ export default function DebugPanel({ debug }: Props) {
       {isExpanded && (
         <div className="debug-content">
           <div>
-            <h4>Model Used</h4>
+            <h4>LLM Model Used</h4>
             <p>{debug.llm_model_used}</p>
+          </div>
+          <div style={{ marginTop: '1rem' }}>
+            <h4>Embedding Model</h4>
+            <p>{debug.embedding_model_used}</p>
           </div>
           <div style={{ marginTop: '1rem' }}>
             <h4>Reranking Model</h4>

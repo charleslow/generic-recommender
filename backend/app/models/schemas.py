@@ -7,6 +7,7 @@ class RecommendRequest(BaseModel):
     user_context: str = Field(..., description="User context for generating recommendations")
     llm_model: str = Field(default="openai/gpt-4o-mini", description="LLM model for candidate generation")
     rerank_model: str = Field(default="zerank-2", description="Reranking model: 'zerank-2' or an LLM model name")
+    embedding_model: str = Field(default="openai", description="Embedding model: 'openai', 'qwen', or 'gist'")
 
 
 class Recommendation(BaseModel):
@@ -31,6 +32,7 @@ class DebugInfo(BaseModel):
     num_retrieved: int = Field(..., description="Number of items retrieved from vector search")
     rerank_model_used: str = Field(..., description="Reranking model that was used")
     llm_model_used: str = Field(..., description="LLM model that was used")
+    embedding_model_used: str = Field(..., description="Embedding model that was used")
 
 
 class RecommendResponse(BaseModel):
@@ -44,3 +46,4 @@ class ModelsResponse(BaseModel):
     """Response for /models endpoint."""
     llm_models: list[str]
     rerank_models: list[str]
+    embedding_models: list[str]

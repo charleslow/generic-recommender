@@ -20,6 +20,7 @@ export interface DebugInfo {
   num_retrieved: number;
   rerank_model_used: string;
   llm_model_used: string;
+  embedding_model_used: string;
 }
 
 export interface RecommendResponse {
@@ -31,6 +32,7 @@ export interface RecommendResponse {
 export interface ModelsResponse {
   llm_models: string[];
   rerank_models: string[];
+  embedding_models: string[];
 }
 
 // Configure this to your Cloud Run URL
@@ -47,7 +49,8 @@ export async function getModels(): Promise<ModelsResponse> {
 export async function getRecommendations(
   userContext: string,
   llmModel: string,
-  rerankModel: string
+  rerankModel: string,
+  embeddingModel: string
 ): Promise<RecommendResponse> {
   const response = await fetch(`${API_BASE_URL}/recommend`, {
     method: 'POST',
@@ -58,6 +61,7 @@ export async function getRecommendations(
       user_context: userContext,
       llm_model: llmModel,
       rerank_model: rerankModel,
+      embedding_model: embeddingModel,
     }),
   });
   

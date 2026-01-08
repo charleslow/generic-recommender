@@ -2,15 +2,19 @@
 import json
 import re
 
+from app.config import EMBEDDING_MODELS, settings
 from openai import AsyncOpenAI
 
-from app.config import settings
+TEXT_LIMIT = 200
 
 # OpenRouter is OpenAI-compatible, so we use the OpenAI SDK with a custom base URL
 client = AsyncOpenAI(
     base_url="https://openrouter.ai/api/v1",
     api_key=settings.openrouter_api_key,
 )
+
+# Lazy-loaded SentenceTransformer models (cached for performance)
+_sentence_transformer_models: dict = {}
 
 
 def _parse_json_array(content: str | None) -> list:
@@ -21,6 +25,8 @@ def _parse_json_array(content: str | None) -> list:
     - Markdown code blocks (```json ... ``` or ``` ... ```)
     - Leading/trailing whitespace and text
     - Arrays embedded in explanatory text
+    - Python-style single quotes instead of double quotes
+    - Trailing commas
     """
     if not content:
         raise ValueError("LLM returned empty response")
@@ -40,8 +46,29 @@ def _parse_json_array(content: str | None) -> list:
     if match:
         content = match.group(0)
     
+    # First attempt: try parsing as-is
     try:
         result = json.loads(content)
+        if isinstance(result, list):
+            return result
+        raise ValueError(f"Expected JSON array, got {type(result).__name__}")
+    except json.JSONDecodeError:
+        pass  # Try fixes below
+    
+    # Fix common LLM issues:
+    # 1. Replace single quotes with double quotes (Python-style lists)
+    # 2. Remove trailing commas before ] or }
+    fixed_content = content
+    
+    # Replace single quotes with double quotes for string values
+    # This regex handles: 'value' -> "value"
+    fixed_content = re.sub(r"'([^']*)'", r'"\1"', fixed_content)
+    
+    # Remove trailing commas (e.g., ["a", "b",] -> ["a", "b"])
+    fixed_content = re.sub(r",\s*([}\]])", r"\1", fixed_content)
+    
+    try:
+        result = json.loads(fixed_content)
         if isinstance(result, list):
             return result
         raise ValueError(f"Expected JSON array, got {type(result).__name__}")
@@ -84,24 +111,63 @@ Response format: ["candidate1", "candidate2", ...]"""
     return candidates[:settings.num_synthetic]
 
 
-async def embed_texts(texts: list[str]) -> list[list[float]]:
+def _get_sentence_transformer(model_name: str):
+    """Get or load a SentenceTransformer model (cached for performance)."""
+    global _sentence_transformer_models
+    
+    if model_name not in _sentence_transformer_models:
+        from sentence_transformers import SentenceTransformer
+        print(f"Loading SentenceTransformer model: {model_name}")
+        _sentence_transformer_models[model_name] = SentenceTransformer(model_name)
+    
+    return _sentence_transformer_models[model_name]
+
+
+async def embed_texts(texts: list[str], embedding_model: str = "openai") -> list[list[float]]:
     """
-    Embed texts using OpenRouter's embedding API.
+    Embed texts using the specified embedding model.
     
     Args:
         texts: List of texts to embed
+        embedding_model: Key of the embedding model to use ('openai', 'qwen', 'gist')
     
     Returns:
         List of embedding vectors
     """
-    response = await client.embeddings.create(
-        model=settings.embedding_model,
-        input=texts,
-    )
+    if embedding_model not in EMBEDDING_MODELS:
+        raise ValueError(f"Unknown embedding model: {embedding_model}. Available: {list(EMBEDDING_MODELS.keys())}")
     
-    # Sort by index to ensure correct order
-    embeddings_data = sorted(response.data, key=lambda x: x.index)
-    return [item.embedding for item in embeddings_data]
+    model_config = EMBEDDING_MODELS[embedding_model]
+    model_name = model_config["name"]
+    model_type = model_config["type"]
+    
+    if model_type == "sentence_transformer":
+        # Use local SentenceTransformer
+        import asyncio
+        
+        def _encode():
+            model = _get_sentence_transformer(model_name)
+            embeddings = model.encode(texts, convert_to_numpy=True)
+            return embeddings.tolist()
+        
+        # Run in thread pool to avoid blocking
+        loop = asyncio.get_event_loop()
+        embeddings = await loop.run_in_executor(None, _encode)
+        return embeddings
+    
+    elif model_type == "openrouter":
+        # Use OpenRouter API
+        response = await client.embeddings.create(
+            model=model_name,
+            input=texts,
+        )
+        
+        # Sort by index to ensure correct order
+        embeddings_data = sorted(response.data, key=lambda x: x.index)
+        return [item.embedding for item in embeddings_data]
+    
+    else:
+        raise ValueError(f"Unknown model type: {model_type}")
 
 
 async def rerank_with_llm(
@@ -122,7 +188,7 @@ async def rerank_with_llm(
     """
     # Build numbered list of items with their IDs clearly marked
     items_text = "\n".join([
-        f"- ID: {item['item_id']} | Title: {item['title']} | Description: {item['text'][:150]}"
+        f"- ID: {item['item_id']} | Title: {item['title']} | Description: {item['text'][:TEXT_LIMIT]}"
         for item in items
     ])
     

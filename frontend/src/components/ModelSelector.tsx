@@ -1,19 +1,32 @@
 interface Props {
   llmModels: string[];
   rerankModels: string[];
+  embeddingModels: string[];
   selectedLlmModel: string;
   selectedRerankModel: string;
+  selectedEmbeddingModel: string;
   onLlmModelChange: (model: string) => void;
   onRerankModelChange: (model: string) => void;
+  onEmbeddingModelChange: (model: string) => void;
 }
+
+// Display names for embedding models
+const EMBEDDING_DISPLAY_NAMES: Record<string, string> = {
+  'openai': 'OpenAI text-embedding-3-small',
+  'qwen': 'Qwen3 Embedding 8B',
+  'gist': 'GIST-MiniLM-L6 (local)',
+};
 
 export default function ModelSelector({
   llmModels,
   rerankModels,
+  embeddingModels,
   selectedLlmModel,
   selectedRerankModel,
+  selectedEmbeddingModel,
   onLlmModelChange,
   onRerankModelChange,
+  onEmbeddingModelChange,
 }: Props) {
   return (
     <div className="control-row">
@@ -27,6 +40,20 @@ export default function ModelSelector({
           {llmModels.map((model) => (
             <option key={model} value={model}>
               {model}
+            </option>
+          ))}
+        </select>
+      </div>
+      <div className="control-group">
+        <label htmlFor="embedding-model">Embedding Model</label>
+        <select
+          id="embedding-model"
+          value={selectedEmbeddingModel}
+          onChange={(e) => onEmbeddingModelChange(e.target.value)}
+        >
+          {embeddingModels.map((model) => (
+            <option key={model} value={model}>
+              {EMBEDDING_DISPLAY_NAMES[model] || model}
             </option>
           ))}
         </select>

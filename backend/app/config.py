@@ -2,7 +2,14 @@
 Configuration for the recommender system.
 Values are hardcoded here but can be loaded from a YAML file.
 """
+import sys
+from pathlib import Path
+
 from pydantic_settings import BaseSettings
+
+# Add project root to path for shared imports
+sys.path.insert(0, str(Path(__file__).parent.parent.parent))
+from shared.embedding_models import EMBEDDING_MODELS
 
 MODELS = [
         # openai
@@ -26,12 +33,14 @@ class Settings(BaseSettings):
     openrouter_api_key: str = ""
     zeroentropy_api_key: str = ""
     
-    # Data directory (contains embeddings.npy and catalogue.json)
+    # Data directory (contains embeddings_*.npy and catalogue.json)
     data_dir: str = "/app/data"
     
-    # Embedding model (must match what was used for catalogue)
-    embedding_model: str = "openai/text-embedding-3-small"
-    embedding_dimensions: int = 1536
+    # Default embedding model (must be a key in EMBEDDING_MODELS)
+    default_embedding_model: str = "openai"
+    
+    # Available embedding models (keys from EMBEDDING_MODELS)
+    available_embedding_models: list[str] = list(EMBEDDING_MODELS.keys())
     
     # Recommender config
     system_prompt: str = "You are a career guidance assistant to suggest future pathways for youth."

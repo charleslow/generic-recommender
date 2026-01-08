@@ -1,19 +1,13 @@
 """Recommendation API router."""
 import time
 
-from fastapi import APIRouter, HTTPException
-
 from app.config import settings
-from app.models import (
-    DebugInfo,
-    LatencyBreakdown,
-    ModelsResponse,
-    Recommendation,
-    RecommendRequest,
-    RecommendResponse,
-)
-from app.services import embed_texts, generate_synthetic_candidates, rerank_items
+from app.models import (DebugInfo, LatencyBreakdown, ModelsResponse,
+                        Recommendation, RecommendRequest, RecommendResponse)
+from app.services import (embed_texts, generate_synthetic_candidates,
+                          rerank_items)
 from app.services.vector_search import vector_service
+from fastapi import APIRouter, HTTPException
 
 router = APIRouter()
 
@@ -42,6 +36,11 @@ async def get_recommendations(request: RecommendRequest):
             status_code=400,
             detail=f"Invalid rerank model. Available: {settings.rerank_models}"
         )
+    if request.embedding_model not in settings.available_embedding_models:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Invalid embedding model. Available: {settings.available_embedding_models}"
+        )
     
     # 1. Generate synthetic candidates
     t0 = time.perf_counter()
@@ -57,7 +56,7 @@ async def get_recommendations(request: RecommendRequest):
     # 2. Embed synthetic candidates
     t0 = time.perf_counter()
     try:
-        candidate_embeddings = await embed_texts(synthetic_candidates)
+        candidate_embeddings = await embed_texts(synthetic_candidates, embedding_model=request.embedding_model)
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Embedding failed: {str(e)}")
     embedding_ms = (time.perf_counter() - t0) * 1000
@@ -67,6 +66,7 @@ async def get_recommendations(request: RecommendRequest):
     try:
         retrieved_items = vector_service.search(
             query_embeddings=candidate_embeddings,
+            embedding_model=request.embedding_model,
             k=10,  # k per query, will aggregate
         )
     except Exception as e:
@@ -110,6 +110,7 @@ async def get_recommendations(request: RecommendRequest):
         num_retrieved=len(retrieved_items),
         rerank_model_used=request.rerank_model,
         llm_model_used=request.llm_model,
+        embedding_model_used=request.embedding_model,
     )
     
     return RecommendResponse(
@@ -121,10 +122,11 @@ async def get_recommendations(request: RecommendRequest):
 
 @router.get("/models", response_model=ModelsResponse)
 async def get_available_models():
-    """Get available LLM models and reranking models."""
+    """Get available LLM models, reranking models, and embedding models."""
     return ModelsResponse(
         llm_models=settings.available_models,
         rerank_models=settings.rerank_models,
+        embedding_models=settings.available_embedding_models,
     )
 
 

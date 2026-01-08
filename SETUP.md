@@ -68,7 +68,7 @@ Each line must be valid JSON with these fields:
 cd generic-recommender
 uv venv
 source .venv/bin/activate
-uv pip install openai numpy
+uv pip install openai numpy sentence_transformers
 
 # Set your OpenRouter API key
 export OPENROUTER_API_KEY=sk-or-v1-xxxx

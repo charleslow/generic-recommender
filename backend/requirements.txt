@@ -7,3 +7,4 @@ numpy==1.26.4
 faiss-cpu==1.8.0
 packaging
 zeroentropy>=0.1.0a7
+sentence-transformers>=2.2.0

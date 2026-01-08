@@ -1,35 +1,31 @@
-"""Vector search service using FAISS."""
+"""Vector search service using FAISS with multiple embedding model support."""
 import json
 from pathlib import Path
 
 import faiss
 import numpy as np
-
-from app.config import settings
+from app.config import EMBEDDING_MODELS, settings
 
 
 class VectorSearchService:
-    """Service for vector similarity search using FAISS."""
+    """Service for vector similarity search using FAISS with multiple embedding indexes."""
     
     def __init__(self):
-        self.index: faiss.IndexFlatIP | None = None
+        # One index per embedding model
+        self.indexes: dict[str, faiss.IndexFlatIP] = {}
         self.catalogue: list[dict] = []
         self.id_to_idx: dict[str, int] = {}
         self._initialized = False
     
     async def initialize(self):
-        """Load embeddings from local data files and build FAISS index."""
+        """Load embeddings from local data files and build FAISS indexes for all models."""
         if self._initialized:
             return
         
         # Load from local data directory (bundled with container)
         data_dir = Path(settings.data_dir)
         
-        # Load embeddings
-        embeddings_path = data_dir / "embeddings.npy"
-        embeddings = np.load(embeddings_path).astype(np.float32)
-        
-        # Load catalogue metadata
+        # Load catalogue metadata (shared across all models)
         catalogue_path = data_dir / "catalogue.json"
         with open(catalogue_path, "r") as f:
             self.catalogue = json.load(f)
@@ -37,27 +33,48 @@ class VectorSearchService:
         # Build index mapping
         self.id_to_idx = {item["item_id"]: i for i, item in enumerate(self.catalogue)}
         
-        # Build FAISS index (Inner Product for cosine similarity with normalized vectors)
-        # Normalize embeddings for cosine similarity
-        faiss.normalize_L2(embeddings)
+        # Load embeddings and build FAISS index for each available model
+        for model_key in settings.available_embedding_models:
+            embeddings_path = data_dir / f"embeddings_{model_key}.npy"
+            
+            if not embeddings_path.exists():
+                print(f"Warning: Embeddings file not found for model '{model_key}': {embeddings_path}")
+                continue
+            
+            embeddings = np.load(embeddings_path).astype(np.float32)
+            
+            # Normalize embeddings for cosine similarity (Inner Product)
+            faiss.normalize_L2(embeddings)
+            
+            # Get embedding dimensions from config
+            dimensions = EMBEDDING_MODELS[model_key]["dimensions"]
+            
+            # Build FAISS index
+            index = faiss.IndexFlatIP(dimensions)
+            index.add(embeddings)
+            self.indexes[model_key] = index
+            
+            print(f"Loaded {len(self.catalogue)} items into FAISS index for model '{model_key}' (dim={dimensions})")
         
-        self.index = faiss.IndexFlatIP(settings.embedding_dimensions)
-        self.index.add(embeddings)
+        if not self.indexes:
+            raise RuntimeError("No embedding indexes could be loaded. Check that embeddings_*.npy files exist.")
         
         self._initialized = True
-        print(f"Loaded {len(self.catalogue)} items into FAISS index")
+        print(f"VectorSearchService initialized with {len(self.indexes)} embedding model(s): {list(self.indexes.keys())}")
     
     def search(
         self,
         query_embeddings: list[list[float]],
+        embedding_model: str,
         k: int = 10,
     ) -> list[dict]:
         """
-        Search for nearest neighbors for multiple query embeddings.
+        Search for nearest neighbors for multiple query embeddings using the specified embedding model's index.
         Merges results by summing scores.
         
         Args:
             query_embeddings: List of embedding vectors
+            embedding_model: Key of the embedding model to use (e.g., 'openai', 'qwen', 'gist')
             k: Number of neighbors per query
         
         Returns:
@@ -66,12 +83,18 @@ class VectorSearchService:
         if not self._initialized:
             raise RuntimeError("VectorSearchService not initialized. Call initialize() first.")
         
+        if embedding_model not in self.indexes:
+            available = list(self.indexes.keys())
+            raise ValueError(f"Embedding model '{embedding_model}' not available. Available: {available}")
+        
+        index = self.indexes[embedding_model]
+        
         # Convert to numpy and normalize
         queries = np.array(query_embeddings, dtype=np.float32)
         faiss.normalize_L2(queries)
         
         # Search for each query
-        scores, indices = self.index.search(queries, k)
+        scores, indices = index.search(queries, k)
         
         # Aggregate scores across all queries
         score_map: dict[int, float] = {}

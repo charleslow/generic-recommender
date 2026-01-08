@@ -10,10 +10,12 @@ function App() {
   // Available options
   const [llmModels, setLlmModels] = useState<string[]>(['openai/gpt-4o-mini']);
   const [rerankModels, setRerankModels] = useState<string[]>(['zerank-2', 'openai/gpt-4o-mini']);
+  const [embeddingModels, setEmbeddingModels] = useState<string[]>(['openai', 'qwen', 'gist']);
   
   // Selected options
   const [selectedLlmModel, setSelectedLlmModel] = useState('openai/gpt-4o-mini');
   const [selectedRerankModel, setSelectedRerankModel] = useState('zerank-2');
+  const [selectedEmbeddingModel, setSelectedEmbeddingModel] = useState('openai');
   
   // Query and results
   const [userContext, setUserContext] = useState('');
@@ -29,11 +31,15 @@ function App() {
       .then((data) => {
         setLlmModels(data.llm_models);
         setRerankModels(data.rerank_models);
+        setEmbeddingModels(data.embedding_models);
         if (data.llm_models.length > 0) {
           setSelectedLlmModel(data.llm_models[0]);
         }
         if (data.rerank_models.length > 0) {
           setSelectedRerankModel(data.rerank_models[0]);
+        }
+        if (data.embedding_models.length > 0) {
+          setSelectedEmbeddingModel(data.embedding_models[0]);
         }
       })
       .catch((err) => {
@@ -52,7 +58,8 @@ function App() {
       const response = await getRecommendations(
         userContext,
         selectedLlmModel,
-        selectedRerankModel
+        selectedRerankModel,
+        selectedEmbeddingModel
       );
       setResult(response);
     } catch (err) {
@@ -74,10 +81,13 @@ function App() {
         <ModelSelector
           llmModels={llmModels}
           rerankModels={rerankModels}
+          embeddingModels={embeddingModels}
           selectedLlmModel={selectedLlmModel}
           selectedRerankModel={selectedRerankModel}
+          selectedEmbeddingModel={selectedEmbeddingModel}
           onLlmModelChange={setSelectedLlmModel}
           onRerankModelChange={setSelectedRerankModel}
+          onEmbeddingModelChange={setSelectedEmbeddingModel}
         />
         <QueryInput
           value={userContext}
