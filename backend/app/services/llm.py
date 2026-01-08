@@ -109,6 +109,7 @@ Response format: ["candidate1", "candidate2", ...]"""
         model=model,
         messages=[{"role": "user", "content": prompt}],
         temperature=0.7,
+        extra_body={"reasoning": {"effort": "none"}},  # Disable thinking/reasoning
     )
     
     content = response.choices[0].message.content
@@ -224,6 +225,7 @@ YOUR RESPONSE (JSON array only):"""
         model=model,
         messages=[{"role": "user", "content": prompt}],
         temperature=0.0,
+        extra_body={"reasoning": {"effort": "none"}},  # Disable thinking/reasoning
     )
     
     content = response.choices[0].message.content
