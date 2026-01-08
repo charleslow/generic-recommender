@@ -12,8 +12,6 @@ interface Props {
 
 // Display names for embedding models
 const EMBEDDING_DISPLAY_NAMES: Record<string, string> = {
-  'openai': 'OpenAI text-embedding-3-small',
-  'qwen': 'Qwen3 Embedding 8B',
   'gist': 'GIST-MiniLM-L6 (local)',
 };
 
