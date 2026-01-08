@@ -14,18 +14,23 @@ from shared.embedding_models import EMBEDDING_MODELS
 MODELS = [
         # openai
         "openai/gpt-4o-mini",
-        "openai/gpt-oss-120b",
-        "openai/gpt-oss-20b",
-        "openai/gpt-5-nano",
+        "bytedance-seed/seed-1.6-flash",
+        "x-ai/grok-code-fast-1",
+        "x-ai/grok-4.1-fast",
+        "x-ai/grok-4-fast",
+        # "openai/gpt-oss-120b",
+        # "openai/gpt-oss-20b",
+        # "openai/gpt-5-nano", # requires reasoning
         # deepseek
         "deepseek/deepseek-chat",
         "deepseek/deepseek-r1-0528-qwen3-8b",
-        "deepseek/deepseek-r1-distill-qwen-32b",
+        # "deepseek/deepseek-r1-distill-qwen-32b",
         # gemini
         "google/gemini-2.5-flash-lite",
         # qwen
+        "qwen/qwen3-coder-flash",
         "qwen/qwen3-next-80b-a3b-instruct",
-        "qwen/qwen3-coder:free",
+        # "qwen/qwen3-coder:free",
     ]
 
 class Settings(BaseSettings):
@@ -45,7 +50,7 @@ class Settings(BaseSettings):
     # Recommender config
     system_prompt: str = "You are a career coach. You recommend articles that best suit the career seeker."
     num_synthetic: int = 3       # Number of synthetic candidates to generate
-    num_candidates: int = 50     # Number of items to retrieve for reranking
+    num_candidates: int = 20     # Number of items to retrieve for reranking
     num_results: int = 5         # Final recommendations to return
     
     # Available LLM models for frontend dropdown

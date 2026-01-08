@@ -20,13 +20,7 @@ export default function QueryInput({ value, onChange, onSubmit, isLoading }: Pro
         value={value}
         onChange={(e) => onChange(e.target.value)}
         onKeyDown={handleKeyDown}
-        placeholder="Enter user context here...
-
-Example:
-Career Direction: I want a job that aligns with my interests and hobbies
-Areas of Interest: Tech, AI and Gaming
-Diploma: DIPLOMA IN INFO TECH
-Degree: BACHELOR OF COMP. SCIENCE"
+        placeholder="Enter user context here... e.g. I am a first time job seeker"
         disabled={isLoading}
       />
       <button
