@@ -29,8 +29,8 @@ OPENROUTER_MODELS = [
 GROQ_MODELS = [
     "groq/llama-3.3-70b-versatile",
     "groq/llama-3.1-8b-instant",
-    "groq/mixtral-8x7b-32768",
-    "groq/gemma2-9b-it",
+    "groq/openai/gpt-oss-120b",
+    "groq/openai/gpt-oss-20b",
 ]
 
 # Combined list of all models

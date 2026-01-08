@@ -137,7 +137,6 @@ Response format: ["candidate1", "candidate2", ...]"""
             model=model_name,
             messages=[{"role": "user", "content": prompt}],
             temperature=0.7,
-            reasoning_effort="none",  # Disable thinking/reasoning
         )
     else:  # openrouter
         response = await openrouter_client.chat.completions.create(
@@ -270,7 +269,6 @@ YOUR RESPONSE (JSON array only):"""
             model=model_name,
             messages=[{"role": "user", "content": prompt}],
             temperature=0.0,
-            reasoning_effort="none",  # Disable thinking/reasoning
         )
     else:  # openrouter
         response = await openrouter_client.chat.completions.create(
