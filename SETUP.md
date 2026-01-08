@@ -63,6 +63,8 @@ Each line must be valid JSON with these fields:
 
 ### Embed the catalogue
 
+The system supports multiple embedding models. You can generate embeddings for all models or select specific ones:
+
 ```bash
 # Set up Python environment with uv
 cd generic-recommender
@@ -73,12 +75,26 @@ uv pip install openai numpy sentence_transformers
 # Set your OpenRouter API key
 export OPENROUTER_API_KEY=sk-or-v1-xxxx
 
-# Run embedding script
-python scripts/embed_catalogue.py
+# Run embedding script for all models
+python scripts/embed_catalogue.py --model all
+
+# Or generate for specific models only:
+# python scripts/embed_catalogue.py --model openai
+# python scripts/embed_catalogue.py --model qwen
+# python scripts/embed_catalogue.py --model gist
 ```
 
+**Available embedding models:**
+| Key | Model | Type | Dimensions |
+|-----|-------|------|------------|
+| `openai` | openai/text-embedding-3-small | OpenRouter API | 1536 |
+| `qwen` | qwen/qwen3-embedding-8b | OpenRouter API | 4096 |
+| `gist` | avsolatorio/GIST-all-MiniLM-L6-v2 | Local (SentenceTransformer) | 384 |
+
 This creates:
-- `user_inputs/embeddings.npy` - numpy array of embeddings
+- `user_inputs/embeddings_openai.npy` - OpenAI embeddings
+- `user_inputs/embeddings_qwen.npy` - Qwen embeddings  
+- `user_inputs/embeddings_gist.npy` - GIST embeddings (runs locally, no API needed)
 - `user_inputs/catalogue.json` - catalogue metadata
 
 ### Copy data to backend
@@ -88,9 +104,11 @@ The embeddings are bundled directly into the Docker image for simplicity:
 ```bash
 # Copy the generated files to the backend data directory
 mkdir -p backend/data
-cp user_inputs/embeddings.npy backend/data/
+cp user_inputs/embeddings_*.npy backend/data/
 cp user_inputs/catalogue.json backend/data/
 ```
+
+**Note:** Only copy the embedding files for models you want to support. Each embedding file adds to the Docker image size.
 
 ---
 
@@ -151,24 +169,6 @@ uvicorn app.main:app --reload --port 8080
 ```bash
 cd backend
 
-# Deploy with environment variables
-gcloud run deploy generic-recommender \
-  --source . \
-  --region asia-southeast1 \
-  --allow-unauthenticated \
-  --min-instances 1 \
-  --max-instances 3 \
-  --memory 2Gi \
-  --set-env-vars "OPENROUTER_API_KEY=sk-or-v1-xxxx,ZEROENTROPY_API_KEY=ze-xxxx"
-```
-
-**Note**: The embedding data is bundled into the Docker image. When you update your catalogue, re-run the embedding script and redeploy.
-
-Note the deployed URL (e.g., `https://generic-recommender-xxxxx-uc.a.run.app`)
-
-### Using Secret Manager (recommended for production)
-
-```bash
 # Export env vars if not already done
 export $(grep -v '^#' .env | xargs)
 
@@ -261,18 +261,19 @@ Your app is now live at `https://your-project-id.web.app`!
 
 1. Open your Firebase Hosting URL
 2. Select an LLM model (e.g., `openai/gpt-4o-mini`)
-3. Select reranking method (`zerank-2` or `llm`)
-4. Enter a user context:
+3. Select an embedding model (`openai`, `qwen`, or `gist`)
+4. Select reranking method (`zerank-2` or an LLM model)
+5. Enter a user context:
    ```
    Career Direction: I want a job that aligns with my interests
    Areas of Interest: Tech, AI and Gaming
    Education: Bachelor of Computer Science
    ```
-5. Click "Get Recommendations"
-6. View:
+6. Click "Get Recommendations"
+7. View:
    - **Recommendations** with scores
    - **Latency breakdown** for each component
-   - **Debug info** showing synthetic candidates
+   - **Debug info** showing synthetic candidates and models used
 
 ---
 
@@ -285,7 +286,9 @@ If you see slow first requests, ensure `--min-instances 1` is set.
 The backend is configured for `*` origins. If you need stricter CORS, edit `backend/app/main.py`.
 
 ### Embedding dimension mismatch
-Ensure the same embedding model is used for precomputation and inference. Default is `openai/text-embedding-3-small` (1536 dimensions).
+The system automatically uses the correct index for each embedding model. If you get dimension errors, ensure:
+1. The embedding file (`embeddings_<model>.npy`) exists in `backend/data/`
+2. You regenerated embeddings after any config changes: `python scripts/embed_catalogue.py --model all`
 
 ### ZeroEntropy API errors
 Check your API key and ensure your account has access to `zerank-2`.
