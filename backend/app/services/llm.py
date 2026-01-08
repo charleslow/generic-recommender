@@ -79,6 +79,7 @@ def _parse_json_array(content: str | None) -> list:
 async def generate_synthetic_candidates(
     user_context: str,
     model: str,
+    system_prompt: str | None = None,
 ) -> list[str]:
     """
     Generate synthetic item candidates using an LLM.
@@ -86,11 +87,15 @@ async def generate_synthetic_candidates(
     Args:
         user_context: The user's context/query
         model: OpenRouter model name (e.g., 'openai/gpt-4o-mini')
+        system_prompt: Custom system prompt (uses default from settings if not provided)
     
     Returns:
         List of synthetic candidate strings
     """
-    prompt = f"""{settings.system_prompt}
+    # Use provided system prompt or fall back to default
+    effective_prompt = system_prompt if system_prompt else settings.system_prompt
+    
+    prompt = f"""{effective_prompt}
 
 Generate {settings.num_synthetic} {settings.item_type} recommendations for the following user context. 
 Return ONLY a JSON array of strings, each being a short {settings.item_type} title/name.

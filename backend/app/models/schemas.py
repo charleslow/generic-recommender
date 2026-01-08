@@ -8,6 +8,7 @@ class RecommendRequest(BaseModel):
     llm_model: str = Field(default="openai/gpt-4o-mini", description="LLM model for candidate generation")
     rerank_model: str = Field(default="zerank-2", description="Reranking model: 'zerank-2' or an LLM model name")
     embedding_model: str = Field(default="openai", description="Embedding model: 'openai', 'qwen', or 'gist'")
+    system_prompt: str | None = Field(default=None, description="Custom system prompt for LLM (uses default if not provided)")
 
 
 class Recommendation(BaseModel):
@@ -47,3 +48,4 @@ class ModelsResponse(BaseModel):
     llm_models: list[str]
     rerank_models: list[str]
     embedding_models: list[str]
+    default_system_prompt: str

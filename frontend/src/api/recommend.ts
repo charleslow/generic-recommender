@@ -33,6 +33,7 @@ export interface ModelsResponse {
   llm_models: string[];
   rerank_models: string[];
   embedding_models: string[];
+  default_system_prompt: string;
 }
 
 // Configure this to your Cloud Run URL
@@ -50,7 +51,8 @@ export async function getRecommendations(
   userContext: string,
   llmModel: string,
   rerankModel: string,
-  embeddingModel: string
+  embeddingModel: string,
+  systemPrompt?: string
 ): Promise<RecommendResponse> {
   const response = await fetch(`${API_BASE_URL}/recommend`, {
     method: 'POST',
@@ -62,6 +64,7 @@ export async function getRecommendations(
       llm_model: llmModel,
       rerank_model: rerankModel,
       embedding_model: embeddingModel,
+      system_prompt: systemPrompt || undefined,
     }),
   });
   

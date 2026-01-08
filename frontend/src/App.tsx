@@ -5,17 +5,20 @@ import QueryInput from './components/QueryInput';
 import LatencyDisplay from './components/LatencyDisplay';
 import ResultsList from './components/ResultsList';
 import DebugPanel from './components/DebugPanel';
+import SystemPromptInput from './components/SystemPromptInput';
 
 function App() {
   // Available options
   const [llmModels, setLlmModels] = useState<string[]>(['openai/gpt-4o-mini']);
   const [rerankModels, setRerankModels] = useState<string[]>(['zerank-2', 'openai/gpt-4o-mini']);
   const [embeddingModels, setEmbeddingModels] = useState<string[]>(['openai', 'qwen', 'gist']);
+  const [defaultSystemPrompt, setDefaultSystemPrompt] = useState<string>('');
   
   // Selected options
   const [selectedLlmModel, setSelectedLlmModel] = useState('openai/gpt-4o-mini');
   const [selectedRerankModel, setSelectedRerankModel] = useState('zerank-2');
   const [selectedEmbeddingModel, setSelectedEmbeddingModel] = useState('openai');
+  const [systemPrompt, setSystemPrompt] = useState('');
   
   // Query and results
   const [userContext, setUserContext] = useState('');
@@ -32,6 +35,8 @@ function App() {
         setLlmModels(data.llm_models);
         setRerankModels(data.rerank_models);
         setEmbeddingModels(data.embedding_models);
+        setDefaultSystemPrompt(data.default_system_prompt);
+        setSystemPrompt(data.default_system_prompt);
         if (data.llm_models.length > 0) {
           setSelectedLlmModel(data.llm_models[0]);
         }
@@ -59,7 +64,8 @@ function App() {
         userContext,
         selectedLlmModel,
         selectedRerankModel,
-        selectedEmbeddingModel
+        selectedEmbeddingModel,
+        systemPrompt
       );
       setResult(response);
     } catch (err) {
@@ -78,6 +84,11 @@ function App() {
       </header>
 
       <section className="controls">
+        <SystemPromptInput
+          value={systemPrompt}
+          onChange={setSystemPrompt}
+          defaultPrompt={defaultSystemPrompt}
+        />
         <ModelSelector
           llmModels={llmModels}
           rerankModels={rerankModels}

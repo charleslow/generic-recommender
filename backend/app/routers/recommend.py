@@ -48,6 +48,7 @@ async def get_recommendations(request: RecommendRequest):
         synthetic_candidates = await generate_synthetic_candidates(
             user_context=request.user_context,
             model=request.llm_model,
+            system_prompt=request.system_prompt,
         )
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Candidate generation failed: {str(e)}")
@@ -127,6 +128,7 @@ async def get_available_models():
         llm_models=settings.available_models,
         rerank_models=settings.rerank_models,
         embedding_models=settings.available_embedding_models,
+        default_system_prompt=settings.system_prompt,
     )
 
 

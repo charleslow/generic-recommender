@@ -316,3 +316,64 @@ body {
   padding: 3rem;
   color: #999;
 }
+
+/* System Prompt Input Styles */
+.system-prompt-input {
+  margin-bottom: 1.5rem;
+  padding-bottom: 1.5rem;
+  border-bottom: 1px solid #eee;
+}
+
+.system-prompt-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.5rem;
+}
+
+.system-prompt-header label {
+  font-weight: 600;
+  color: #444;
+}
+
+.system-prompt-input textarea {
+  width: 100%;
+  padding: 0.75rem;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  min-height: 80px;
+  resize: vertical;
+  font-family: inherit;
+  line-height: 1.5;
+}
+
+.system-prompt-input textarea:focus {
+  outline: none;
+  border-color: #4a90d9;
+  box-shadow: 0 0 0 3px rgba(74, 144, 217, 0.1);
+}
+
+.reset-button {
+  background: none;
+  border: 1px solid #ddd;
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.8rem;
+  color: #666;
+  transition: all 0.2s;
+}
+
+.reset-button:hover {
+  background: #f5f5f5;
+  border-color: #ccc;
+}
+
+.modified-indicator {
+  display: block;
+  margin-top: 0.25rem;
+  font-size: 0.75rem;
+  color: #4a90d9;
+  font-style: italic;
+}
