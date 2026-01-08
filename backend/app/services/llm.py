@@ -1,17 +1,42 @@
-"""LLM services using OpenRouter API via OpenAI SDK."""
+"""LLM services using OpenRouter and Groq APIs."""
 import json
 import re
 
 from app.config import EMBEDDING_MODELS, settings
+from groq import AsyncGroq
 from openai import AsyncOpenAI
 
 TEXT_LIMIT = 200
 
-# OpenRouter is OpenAI-compatible, so we use the OpenAI SDK with a custom base URL
-client = AsyncOpenAI(
+# OpenRouter client (OpenAI-compatible)
+openrouter_client = AsyncOpenAI(
     base_url="https://openrouter.ai/api/v1",
     api_key=settings.openrouter_api_key,
 )
+
+# Groq client
+groq_client = AsyncGroq(
+    api_key=settings.groq_api_key,
+)
+
+
+def _parse_model(model: str) -> tuple[str, str]:
+    """
+    Parse a model string to extract provider and model name.
+    
+    Args:
+        model: Model string like "openrouter/openai/gpt-4o-mini" or "groq/llama-3.3-70b-versatile"
+    
+    Returns:
+        Tuple of (provider, model_name)
+    """
+    if model.startswith("openrouter/"):
+        return "openrouter", model[len("openrouter/"):]
+    elif model.startswith("groq/"):
+        return "groq", model[len("groq/"):]
+    else:
+        # Default to openrouter for backward compatibility
+        return "openrouter", model
 
 # Lazy-loaded SentenceTransformer models (cached for performance)
 _sentence_transformer_models: dict = {}
@@ -105,12 +130,22 @@ User Context:
 
 Response format: ["candidate1", "candidate2", ...]"""
 
-    response = await client.chat.completions.create(
-        model=model,
-        messages=[{"role": "user", "content": prompt}],
-        temperature=0.7,
-        extra_body={"reasoning": {"effort": "none"}},  # Disable thinking/reasoning
-    )
+    provider, model_name = _parse_model(model)
+    
+    if provider == "groq":
+        response = await groq_client.chat.completions.create(
+            model=model_name,
+            messages=[{"role": "user", "content": prompt}],
+            temperature=0.7,
+            reasoning_effort="none",  # Disable thinking/reasoning
+        )
+    else:  # openrouter
+        response = await openrouter_client.chat.completions.create(
+            model=model_name,
+            messages=[{"role": "user", "content": prompt}],
+            temperature=0.7,
+            extra_body={"reasoning": {"effort": "none"}},  # Disable thinking/reasoning
+        )
     
     content = response.choices[0].message.content
     candidates = _parse_json_array(content)
@@ -163,7 +198,7 @@ async def embed_texts(texts: list[str], embedding_model: str = "openai") -> list
     
     elif model_type == "openrouter":
         # Use OpenRouter API
-        response = await client.embeddings.create(
+        response = await openrouter_client.embeddings.create(
             model=model_name,
             input=texts,
         )
@@ -180,6 +215,7 @@ async def rerank_with_llm(
     user_context: str,
     items: list[dict],
     model: str,
+    system_prompt: str | None = None,
 ) -> list[dict]:
     """
     Rerank items using an LLM.
@@ -188,10 +224,14 @@ async def rerank_with_llm(
         user_context: The user's context/query
         items: List of item dicts with 'item_id', 'title', 'text'
         model: OpenRouter model name
+        system_prompt: Custom system prompt (uses default from settings if not provided)
     
     Returns:
         Reranked list of items with scores
     """
+    # Use provided system prompt or fall back to default
+    effective_prompt = system_prompt if system_prompt else settings.system_prompt
+    
     # Build numbered list of items with their IDs clearly marked
     items_text = "\n".join([
         f"- ID: {item['item_id']} | Title: {item['title']} | Description: {item['text'][:TEXT_LIMIT]}"
@@ -201,7 +241,9 @@ async def rerank_with_llm(
     # Get list of valid IDs for the prompt
     valid_ids = [item['item_id'] for item in items]
     
-    prompt = f"""You are a recommendation system. Your task is to rank items by relevance to the user.
+    prompt = f"""{effective_prompt}
+
+Your task is to rank items by relevance to the user.
 
 USER CONTEXT:
 {user_context}
@@ -221,12 +263,22 @@ Valid IDs are: {valid_ids}
 
 YOUR RESPONSE (JSON array only):"""
 
-    response = await client.chat.completions.create(
-        model=model,
-        messages=[{"role": "user", "content": prompt}],
-        temperature=0.0,
-        extra_body={"reasoning": {"effort": "none"}},  # Disable thinking/reasoning
-    )
+    provider, model_name = _parse_model(model)
+    
+    if provider == "groq":
+        response = await groq_client.chat.completions.create(
+            model=model_name,
+            messages=[{"role": "user", "content": prompt}],
+            temperature=0.0,
+            reasoning_effort="none",  # Disable thinking/reasoning
+        )
+    else:  # openrouter
+        response = await openrouter_client.chat.completions.create(
+            model=model_name,
+            messages=[{"role": "user", "content": prompt}],
+            temperature=0.0,
+            extra_body={"reasoning": {"effort": "none"}},  # Disable thinking/reasoning
+        )
     
     content = response.choices[0].message.content
     ranked_ids = _parse_json_array(content)
@@ -240,4 +292,5 @@ YOUR RESPONSE (JSON array only):"""
             item["score"] = 1.0 - (i * 0.1)  # Simple descending score
             ranked_items.append(item)
     
+    return ranked_items
     return ranked_items

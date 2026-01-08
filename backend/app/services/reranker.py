@@ -50,6 +50,7 @@ async def rerank_items(
     user_context: str,
     items: list[dict],
     rerank_model: str,
+    system_prompt: str | None = None,
 ) -> list[dict]:
     """
     Rerank items using specified model.
@@ -58,6 +59,7 @@ async def rerank_items(
         user_context: The user's context/query
         items: List of item dicts
         rerank_model: 'zerank-*' for ZeroEntropy, or an LLM model name
+        system_prompt: Custom system prompt (used for LLM reranking)
     
     Returns:
         Reranked list of items with scores
@@ -65,4 +67,4 @@ async def rerank_items(
     if rerank_model.startswith("zerank"):
         return await rerank_with_zeroentropy(user_context, items, rerank_model)
     else:
-        return await rerank_with_llm(user_context, items, rerank_model)
+        return await rerank_with_llm(user_context, items, rerank_model, system_prompt)

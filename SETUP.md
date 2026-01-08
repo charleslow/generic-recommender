@@ -10,6 +10,7 @@ This guide walks you through setting up the Generic Recommender POC from scratch
 - API keys for:
   - [OpenRouter](https://openrouter.ai/) (for LLM and embeddings)
   - [ZeroEntropy](https://zeroentropy.ai/) (for zerank-2 reranking)
+  - [Groq](https://console.groq.com/) (optional, for fast Groq models)
 
 ---
 
@@ -123,8 +124,11 @@ cd backend
 cat > .env << EOF
 OPENROUTER_API_KEY=sk-or-v1-xxxx
 ZEROENTROPY_API_KEY=ze-xxxx
+GROQ_API_KEY=gsk_xxxx
 EOF
 ```
+
+**Note:** The Groq API key is optional. If not provided, Groq models will not be available.
 
 Export the environment variables to your shell:
 
@@ -187,14 +191,23 @@ gcloud secrets add-iam-policy-binding zeroentropy-api-key \
   --member="serviceAccount:${PROJECT_NUMBER}-compute@developer.gserviceaccount.com" \
   --role="roles/secretmanager.secretAccessor"
 
-# Deploy with secrets
+echo -n "$GROQ_API_KEY" | gcloud secrets create groq-api-key --data-file=-
+gcloud secrets add-iam-policy-binding groq-api-key \
+  --member="serviceAccount:${PROJECT_NUMBER}-compute@developer.gserviceaccount.com" \
+  --role="roles/secretmanager.secretAccessor"
+
+# Deploy with secrets (include GROQ_API_KEY if using Groq)
 gcloud run deploy generic-recommender \
   --source . \
   --region asia-southeast1 \
   --allow-unauthenticated \
   --max-instances 2 \
-  --set-secrets "OPENROUTER_API_KEY=openrouter-api-key:latest,ZEROENTROPY_API_KEY=zeroentropy-api-key:latest"
+  --memory 1Gi \
+  --cpu 2 \
+  --set-secrets "OPENROUTER_API_KEY=openrouter-api-key:latest,ZEROENTROPY_API_KEY=zeroentropy-api-key:latest,GROQ_API_KEY=groq-api-key:latest"
 ```
+
+**Note:** If not using Groq, omit the `GROQ_API_KEY` from `--set-secrets`.
 
 ---
 

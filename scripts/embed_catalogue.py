@@ -28,9 +28,9 @@ from pathlib import Path
 import numpy as np
 from openai import OpenAI
 
-# Add project root to path for shared imports
-sys.path.insert(0, str(Path(__file__).parent.parent))
-from shared.embedding_models import EMBEDDING_MODELS
+# Add backend to path for imports
+sys.path.insert(0, str(Path(__file__).parent.parent / "backend"))
+from app.config import EMBEDDING_MODELS
 
 # Configuration
 OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY")

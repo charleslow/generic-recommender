@@ -68,7 +68,7 @@ async def get_recommendations(request: RecommendRequest):
         retrieved_items = vector_service.search(
             query_embeddings=candidate_embeddings,
             embedding_model=request.embedding_model,
-            k=10,  # k per query, will aggregate
+            k=settings.k_per_query,
         )
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Vector search failed: {str(e)}")
@@ -81,6 +81,7 @@ async def get_recommendations(request: RecommendRequest):
             user_context=request.user_context,
             items=retrieved_items,
             rerank_model=request.rerank_model,
+            system_prompt=request.system_prompt,
         )
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Reranking failed: {str(e)}")
