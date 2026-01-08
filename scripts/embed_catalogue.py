@@ -61,6 +61,8 @@ def load_catalogue(filepath: Path) -> list[dict]:
             raise ValueError(f"Missing 'title' in item: {item}")
         if "text" not in item:
             raise ValueError(f"Missing 'text' in item: {item}")
+        # Ensure item_id is always a string
+        item["item_id"] = str(item["item_id"])
     
     return items
 

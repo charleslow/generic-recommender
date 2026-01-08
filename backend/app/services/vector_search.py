@@ -30,6 +30,10 @@ class VectorSearchService:
         with open(catalogue_path, "r") as f:
             self.catalogue = json.load(f)
         
+        # Ensure item_id is always a string
+        for item in self.catalogue:
+            item["item_id"] = str(item["item_id"])
+        
         # Build index mapping
         self.id_to_idx = {item["item_id"]: i for i, item in enumerate(self.catalogue)}
         
